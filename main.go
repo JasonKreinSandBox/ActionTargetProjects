@@ -12,12 +12,16 @@ var (
 	hosts    *string
 	port     *int
 	interval *int
+	counter  *int
+	avgPing  *[]time.Duration
 )
 
 func init() {
 	hosts = flag.String("hosts", "localhost", "Comma-separated list of hostnames")
-	port = flag.Int("port", 80, "Port number")
+	port = flag.Int("port", 8080, "Port number")
 	interval = flag.Int("interval", 10, "Interval in seconds")
+	counter = flag.Int("counter", 0, "Ping counter")
+	avgPing = &[]time.Duration{}
 }
 
 func main() {
@@ -65,7 +69,20 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			fmt.Fprintf(w, "data: Ping time to %s is %v\n\n", *hosts, pingTime)
 			fmt.Fprintf(w, "data: Interval: %d seconds\n\n", *interval)
+			*counter++
+			fmt.Fprintf(w, "data: Ping count: %d\n\n", *counter)
+			*avgPing = append(*avgPing, pingTime)
+			avg := avgPingTotal(*avgPing)
+			fmt.Fprintf(w, "data: Avg response time: %v\n\n", avg)
 		}
 		rc.Flush()
 	}
+}
+
+func avgPingTotal(durations []time.Duration) time.Duration {
+	var total time.Duration
+	for _, d := range durations {
+		total += d
+	}
+	return total / time.Duration(len(durations))
 }
