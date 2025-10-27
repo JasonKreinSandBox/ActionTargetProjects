@@ -6,3 +6,9 @@ and average of response times for all attempts.
 
 The build file was made on a cross platform (windows) and will make a linux executable file called main-linux
 Once the main-linux file is run, open a browser to http://localhost:8080/events to view the returned results.
+
+TODOs:
+    Impliment robust ICMP function to include use of port flag as basic ping doesn't include port handling
+    Create unit tests to validate functions and enhance error handling
+    Fix client side html and beautify index.html to make returned data more readable
+    Setup and configure linux environment to test build file
