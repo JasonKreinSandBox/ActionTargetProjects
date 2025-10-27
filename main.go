@@ -12,7 +12,6 @@ var (
 	hosts    *string
 	port     *int
 	interval *int
-	counter  *int
 )
 
 func init() {
@@ -23,32 +22,50 @@ func init() {
 
 func main() {
 	flag.Parse()
-	counter = new(int)
-	*counter = 0
-	tk := time.NewTicker(time.Duration(*interval) * time.Second)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		for ; ; <-tk.C {
-			time, err := PingHost(*hosts, *port, *interval)
-			if err != nil {
-				fmt.Fprintf(w, "Error: %v\n", err)
-				return
-			}
-			fmt.Fprintf(w, "Host is reachable. Ping time to %s:%d is %v\n", *hosts, *port, time)
-			fmt.Fprintf(w, "Ping count: %d\n", *counter)
-			fmt.Fprintf(w, "Interval: %d seconds\n", *interval)
-			*counter++
-		}
-	})
-
-	http.ListenAndServe(":80", nil)
+	http.HandleFunc("/events", sseHandler)
+	fmt.Printf("Starting server on port :8080\n")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Println("Error starting server:", err)
+	}
 
 }
 
-func PingHost(host string, port int, interval int) (time.Duration, error) {
+func PingHost(host string) (time.Duration, error) {
 	start := time.Now()
 	_, err := net.LookupHost(host)
 	if err != nil {
 		return 0, err
 	}
 	return time.Since(start), nil
+}
+
+func sseHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	clientGone := r.Context().Done()
+
+	rc := http.NewResponseController(w)
+	t := time.NewTicker(time.Duration(*interval) * time.Second)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-clientGone:
+			fmt.Println("Client disconnected")
+			return
+		case <-t.C:
+			pingTime, err := PingHost(*hosts)
+			if err != nil {
+				fmt.Fprintf(w, "data: Error: %v\n\n", err)
+				return
+			}
+			fmt.Fprintf(w, "data: Ping time to %s is %v\n\n", *hosts, pingTime)
+			fmt.Fprintf(w, "data: Interval: %d seconds\n\n", *interval)
+		}
+		rc.Flush()
+	}
 }
