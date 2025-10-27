@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	hosts    *string
-	port     *int
+	hosts *string
+	//port     *int
 	interval *int
 	counter  *int
 	avgPing  *[]time.Duration
@@ -18,7 +18,7 @@ var (
 
 func init() {
 	hosts = flag.String("hosts", "localhost", "Comma-separated list of hostnames")
-	port = flag.Int("port", 8080, "Port number")
+	//port = flag.Int("port", 8080, "Port number")
 	interval = flag.Int("interval", 10, "Interval in seconds")
 	counter = flag.Int("counter", 0, "Ping counter")
 	avgPing = &[]time.Duration{}

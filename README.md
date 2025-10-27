@@ -5,3 +5,4 @@ time. Data returned in this case will be simply number of ping attempts, respons
 and average of response times for all attempts.
 
 The build file was made on a cross platform (windows) and will make a linux executable file called main-linux
+Once the main-linux file is run, open a browser to http://localhost:8080/events to view the returned results.
